@@ -39,12 +39,12 @@ function LogoAdmin() {
       const ext = file.name.split(".").pop();
       const path = `logo/logo.${ext}`;
       const { error: uploadError } = await supabase.storage
-        .from("site-assets")
+        .from("media")
         .upload(path, file, { upsert: true, contentType: file.type });
       if (uploadError) throw uploadError;
 
       const { data: urlData } = supabase.storage
-        .from("site-assets")
+        .from("media")
         .getPublicUrl(path);
 
       const { error: upsertError } = await supabase
