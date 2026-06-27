@@ -1,19 +1,33 @@
 import { createFileRoute, redirect, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { z } from "zod";
-import { Loader2, Mail, Lock, ArrowLeft } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import { Lock, User, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
+
+// ─── Hardcoded admin credentials ──────────────────────────────────────────────
+// Only this username + password can log in. Change these values to rotate access.
+const ADMIN_USERNAME = "noori_admin";
+const ADMIN_PASSWORD = "Ntr@8xQ2#Kv9!";
+const SESSION_KEY = "nt_admin_session";
+export const SESSION_TOKEN = "authenticated_noori_2026";
+
+export function isAuthenticated(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(SESSION_KEY) === SESSION_TOKEN;
+}
+
+export function clearSession() {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(SESSION_KEY);
+  }
+}
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
-  beforeLoad: async () => {
-    const { data } = await supabase.auth.getUser();
-    if (data.user) throw redirect({ to: "/admin" });
+  beforeLoad: () => {
+    if (isAuthenticated()) throw redirect({ to: "/admin" });
   },
   component: AuthPage,
   head: () => ({
@@ -24,79 +38,36 @@ export const Route = createFileRoute("/auth")({
   }),
 });
 
-const credsSchema = z.object({
-  email: z.string().trim().email("Enter a valid email").max(255),
-  password: z.string().min(8, "Minimum 8 characters").max(72),
-});
-
 function AuthPage() {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"login" | "signup">("login");
-  const [busy, setBusy] = useState(false);
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-
-  // Redirect away if a session appears mid-page (e.g. signup auto-login)
-  useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session?.user) {
-        navigate({ to: "/admin" });
-      }
-    });
-    return () => sub.subscription.unsubscribe();
-  }, [navigate]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    const parsed = credsSchema.safeParse({ email, password });
-    if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? "Invalid input");
+    if (!username.trim() || !password) {
+      toast.error("Please enter your username and password");
       return;
     }
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: parsed.data.email,
-      password: parsed.data.password,
-    });
+    // Small artificial delay so it doesn't feel instant (security UX best practice)
+    await new Promise((r) => setTimeout(r, 600));
     setBusy(false);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Welcome back");
-    navigate({ to: "/admin" });
-  }
 
-  async function handleSignup(e: React.FormEvent) {
-    e.preventDefault();
-    if (password !== confirm) {
-      toast.error("Passwords do not match");
-      return;
+    if (username.trim() === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+      localStorage.setItem(SESSION_KEY, SESSION_TOKEN);
+      toast.success("Welcome back");
+      navigate({ to: "/admin" });
+    } else {
+      toast.error("Invalid username or password");
     }
-    const parsed = credsSchema.safeParse({ email, password });
-    if (!parsed.success) {
-      toast.error(parsed.error.issues[0]?.message ?? "Invalid input");
-      return;
-    }
-    setBusy(true);
-    const { error } = await supabase.auth.signUp({
-      email: parsed.data.email,
-      password: parsed.data.password,
-      options: { emailRedirectTo: `${window.location.origin}/auth` },
-    });
-    setBusy(false);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Check your inbox to verify your email");
-    setTab("login");
   }
 
   return (
     <div className="brand-selection grid min-h-screen w-full lg:grid-cols-[1.1fr_1fr]">
-      {/* Visual + guide side */}
+      {/* Visual side */}
       <aside className="relative hidden overflow-hidden bg-[color:var(--color-navy)] lg:block">
         <div
           className="absolute inset-0 opacity-30"
@@ -124,28 +95,13 @@ function AuthPage() {
               Edit services, fleet, gallery, leadership, contact details and more — without touching code. Changes go live immediately after you confirm.
             </p>
 
-            {/* Admin login guide */}
             <div className="mt-10 rounded-2xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur-sm">
               <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[color:var(--color-orange)]">
-                <span className="grid h-5 w-5 place-items-center rounded-full bg-[color:var(--color-orange)] text-[10px] font-bold text-white">i</span>
-                How to access the admin
+                <Lock className="h-3.5 w-3.5" />
+                Admin access only
               </div>
-              <ol className="mt-4 space-y-3 text-sm leading-relaxed text-white/85">
-                <li className="flex gap-3">
-                  <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white/10 text-[11px] font-semibold text-white">1</span>
-                  <span>Open the <span className="font-semibold text-white">Create account</span> tab and sign up with your authorised email and a password of at least 8 characters.</span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white/10 text-[11px] font-semibold text-white">2</span>
-                  <span>Check your inbox and click the verification link we send. Admin privileges are granted automatically the moment your email is verified.</span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white/10 text-[11px] font-semibold text-white">3</span>
-                  <span>Return here, switch to <span className="font-semibold text-white">Sign in</span>, enter the same email and password — you’ll land directly in the CMS dashboard.</span>
-                </li>
-              </ol>
-              <p className="mt-5 border-t border-white/10 pt-4 text-[11px] leading-relaxed text-white/55">
-                Already have an account? Just use <span className="font-semibold text-white/80">Sign in</span>. Forgot your password? Contact your administrator to reset it.
+              <p className="mt-3 text-sm leading-relaxed text-white/75">
+                Sign in with your administrator username and password. Only authorised credentials grant access to the CMS.
               </p>
             </div>
           </div>
@@ -166,115 +122,72 @@ function AuthPage() {
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to website
           </Link>
+
           <h2 className="font-display text-2xl font-bold text-[color:var(--color-navy)]">
             Admin sign in
           </h2>
           <p className="mt-1 text-sm text-[color:var(--color-ink-soft)]">
-            Use your authorised email to access the CMS.
+            Enter your administrator credentials to access the CMS.
           </p>
 
-          <Tabs value={tab} onValueChange={(v) => setTab(v as "login" | "signup")} className="mt-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Sign in</TabsTrigger>
-              <TabsTrigger value="signup">Create account</TabsTrigger>
-            </TabsList>
+          <form onSubmit={handleLogin} className="mt-6 space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="username">Username</Label>
+              <div className="relative">
+                <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--color-ink-soft)]" />
+                <Input
+                  id="username"
+                  type="text"
+                  autoComplete="username"
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="pl-9"
+                  placeholder="Username"
+                />
+              </div>
+            </div>
 
-            <TabsContent value="login" className="mt-6">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="login-email">Email</Label>
-                  <div className="relative">
-                    <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--color-ink-soft)]" />
-                    <Input
-                      id="login-email"
-                      type="email"
-                      autoComplete="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-9"
-                      placeholder="you@nooritransport.in"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="login-password">Password</Label>
-                  <div className="relative">
-                    <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--color-ink-soft)]" />
-                    <Input
-                      id="login-password"
-                      type="password"
-                      autoComplete="current-password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-9"
-                      placeholder="••••••••"
-                    />
-                  </div>
-                </div>
-                <Button
-                  type="submit"
-                  disabled={busy}
-                  className="w-full bg-[color:var(--color-navy)] text-white hover:bg-[color:var(--color-navy)]/90"
+            <div className="space-y-1.5">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--color-ink-soft)]" />
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-9 pr-9"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[color:var(--color-ink-soft)] hover:text-[color:var(--color-navy)]"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
-                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign in"}
-                </Button>
-              </form>
-            </TabsContent>
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
 
-            <TabsContent value="signup" className="mt-6">
-              <form onSubmit={handleSignup} className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@nooritransport.in"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    minLength={8}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="At least 8 characters"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="signup-confirm">Confirm password</Label>
-                  <Input
-                    id="signup-confirm"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    minLength={8}
-                    value={confirm}
-                    onChange={(e) => setConfirm(e.target.value)}
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  disabled={busy}
-                  className="w-full bg-[color:var(--color-navy)] text-white hover:bg-[color:var(--color-navy)]/90"
-                >
-                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create account"}
-                </Button>
-                <p className="text-[11px] leading-relaxed text-[color:var(--color-ink-soft)]">
-                  Admin access is granted automatically when an authorised email is verified. Other accounts can sign up but will not be able to enter the CMS.
-                </p>
-              </form>
-            </TabsContent>
-          </Tabs>
+            <Button
+              type="submit"
+              disabled={busy}
+              className="w-full bg-[color:var(--color-navy)] text-white hover:bg-[color:var(--color-navy)]/90"
+            >
+              {busy ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  Signing in…
+                </span>
+              ) : (
+                "Sign in"
+              )}
+            </Button>
+          </form>
         </div>
       </main>
     </div>

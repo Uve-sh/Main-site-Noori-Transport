@@ -1,14 +1,14 @@
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
+import { isAuthenticated } from "../auth";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) {
+  beforeLoad: () => {
+    if (!isAuthenticated()) {
       throw redirect({ to: "/auth" });
     }
-    return { user: data.user };
+    // Return a stub user object so admin sub-routes don't break
+    return { user: { id: "admin", email: "noori_admin" } };
   },
   component: () => <Outlet />,
 });

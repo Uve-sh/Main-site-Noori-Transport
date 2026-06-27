@@ -1,5 +1,4 @@
 import { Outlet, createFileRoute, redirect, useRouterState, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Settings,
@@ -15,7 +14,7 @@ import {
   LogOut,
   Inbox,
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { isAuthenticated, clearSession } from "../../auth";
 import {
   Sidebar,
   SidebarContent,
@@ -35,20 +34,9 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   ssr: false,
-  beforeLoad: async ({ context }) => {
-    const { user } = context as { user: { id: string; email?: string } };
-    const { data, error } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (error) {
-      console.error(error);
-      throw redirect({ to: "/" });
-    }
-    if (!data) {
-      throw redirect({ to: "/" });
+  beforeLoad: () => {
+    if (!isAuthenticated()) {
+      throw redirect({ to: "/auth" });
     }
   },
   component: AdminLayout,
@@ -87,21 +75,9 @@ const navGroups: { label: string; items: NavItem[] }[] = [
 
 function AdminLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [email, setEmail] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
-    void supabase.auth.getUser().then(({ data }) => {
-      if (active) setEmail(data.user?.email ?? null);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  async function handleSignOut() {
-    await supabase.auth.signOut();
-    toast.success("Signed out");
+  function handleSignOut() {
+    clearSession();
     window.location.href = "/auth";
   }
 
@@ -154,7 +130,7 @@ function AdminLayout() {
           </SidebarContent>
           <SidebarFooter className="border-t border-black/5 p-3">
             <div className="truncate px-2 text-[11px] text-[color:var(--color-ink-soft)]">
-              {email ?? "—"}
+              noori_admin
             </div>
             <Button
               variant="ghost"
