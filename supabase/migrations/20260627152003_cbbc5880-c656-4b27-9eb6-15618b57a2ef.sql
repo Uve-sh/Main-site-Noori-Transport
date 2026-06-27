@@ -1,0 +1,1 @@
+INSERT INTO public.admin_emails (email) VALUES ('vertexplus2025@gmail.com') ON CONFLICT (email) DO NOTHING;

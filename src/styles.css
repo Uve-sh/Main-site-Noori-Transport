@@ -1,0 +1,158 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-display: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-navy: var(--navy);
+  --color-navy-light: var(--navy-light);
+  --color-orange: var(--orange);
+  --color-orange-light: var(--orange-light);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+
+  --shadow-soft: 0 1px 2px 0 oklch(0.2 0.04 260 / 0.04),
+    0 8px 24px -8px oklch(0.2 0.04 260 / 0.08);
+  --shadow-card: 0 2px 6px -2px oklch(0.2 0.04 260 / 0.06),
+    0 16px 40px -16px oklch(0.2 0.04 260 / 0.12);
+  --shadow-elevated: 0 4px 10px -4px oklch(0.2 0.04 260 / 0.08),
+    0 24px 60px -20px oklch(0.2 0.04 260 / 0.18);
+}
+
+:root {
+  --radius: 0.75rem;
+
+  /* Brand */
+  --navy: oklch(0.30 0.08 255);          /* #0D3B66 */
+  --navy-light: oklch(0.40 0.09 255);
+  --orange: oklch(0.68 0.18 45);         /* #F15A24 */
+  --orange-light: oklch(0.75 0.16 55);
+
+  --surface: oklch(0.985 0.003 250);     /* off-white panel */
+  --ink: oklch(0.18 0.03 260);
+  --ink-soft: oklch(0.45 0.02 260);
+
+  --background: oklch(1 0 0);
+  --foreground: var(--ink);
+
+  --card: oklch(1 0 0);
+  --card-foreground: var(--ink);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--ink);
+
+  --primary: var(--navy);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: var(--surface);
+  --secondary-foreground: var(--ink);
+  --muted: oklch(0.97 0.005 250);
+  --muted-foreground: var(--ink-soft);
+  --accent: var(--orange);
+  --accent-foreground: oklch(0.99 0 0);
+  --destructive: oklch(0.6 0.22 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.92 0.008 250);
+  --input: oklch(0.92 0.008 250);
+  --ring: var(--navy);
+}
+
+.dark {
+  --background: oklch(0.16 0.03 260);
+  --foreground: oklch(0.98 0 0);
+  --card: oklch(0.22 0.04 260);
+  --card-foreground: oklch(0.98 0 0);
+  --popover: oklch(0.22 0.04 260);
+  --popover-foreground: oklch(0.98 0 0);
+  --primary: oklch(0.98 0 0);
+  --primary-foreground: var(--navy);
+  --secondary: oklch(0.26 0.04 260);
+  --secondary-foreground: oklch(0.98 0 0);
+  --muted: oklch(0.26 0.04 260);
+  --muted-foreground: oklch(0.75 0.02 260);
+  --accent: var(--orange);
+  --accent-foreground: oklch(0.99 0 0);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: var(--orange);
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4, h5 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+    color: var(--color-navy);
+  }
+  ::selection { background: var(--color-orange); color: white; }
+}
+
+/* ===== Why Choose Us truck section ===== */
+@keyframes truckFloat {
+  0%, 100% { translate: 0 0; }
+  50%      { translate: 0 -3px; }
+}
+@keyframes truckEnter {
+  from { opacity: 0; translate: 0 14px; }
+  to   { opacity: 1; translate: 0 0; }
+}
+@keyframes whyCardEnter {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes cargoShimmer {
+  from { transform: translateX(0); opacity: 0; }
+  20%  { opacity: 1; }
+  to   { transform: translateX(420%); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .truck-anim, .why-card-anim { animation: none !important; }
+}
+
+/* Brand-styled text selection — scoped so it only applies to admin & auth surfaces */
+.brand-selection ::selection,
+.brand-selection::selection {
+  background-color: var(--orange);
+  color: #ffffff;
+  text-shadow: none;
+}
+
+
